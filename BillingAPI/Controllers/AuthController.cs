@@ -22,17 +22,26 @@ namespace BillingAPI.Controllers
         }
 
         [HttpPost("login")]
-        public IActionResult Login([FromBody] UserLogin model)
-        {
-            var user = _context.Users.SingleOrDefault(u => u.Username == model.Username);
-            if (user == null || !BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
-            {
-                return Unauthorized();
-            }
+public IActionResult Login([FromBody] UserLogin model)
+{
+    var user = _context.Users.SingleOrDefault(u => u.Username == model.Username);
+    if (user == null)
+    {
+        Console.WriteLine("User not found");
+        return Unauthorized();
+    }
+    
+    if (!BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
+    {
+        Console.WriteLine("Password verification failed");
+        return Unauthorized();
+    }
 
-            var token = GenerateJwtToken(user);
-            return Ok(new { token });
-        }
+    var token = GenerateJwtToken(user);
+    Console.WriteLine("Login successful, token generated");
+    return Ok(new { token });
+}
+
 
         private string GenerateJwtToken(User user)
         {

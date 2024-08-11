@@ -15,31 +15,48 @@ namespace BillingAPI
             Configuration = configuration;
         }
 
-        public void ConfigureServices(IServiceCollection services)
+       public void ConfigureServices(IServiceCollection services)
+{
+    services.AddControllers();
+
+    services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
         {
-            // Ensure MySQL is used
-            services.AddDbContext<BillingContext>(options =>
-                options.UseMySql(Configuration.GetConnectionString("DefaultConnection"),
-                    new MySqlServerVersion(new Version(8, 0, 23))));
-
-            services.AddControllers();
-        }
-
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            if (env.IsDevelopment())
+            options.TokenValidationParameters = new TokenValidationParameters
             {
-                app.UseDeveloperExceptionPage();
-            }
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = Configuration["Jwt:Issuer"],
+                ValidAudience = Configuration["Jwt:Issuer"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+            };
+        });
 
-            app.UseRouting();
-            app.UseAuthentication();
-            app.UseAuthorization();
+    services.AddDbContext<BillingContext>(options =>
+        options.UseMySql(Configuration.GetConnectionString("DefaultConnection"), 
+            new MySqlServerVersion(new Version(8, 0, 21)))
+    );
+}
 
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
-        }
+public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+{
+    if (env.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+    }
+
+    app.UseRouting();
+
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    app.UseEndpoints(endpoints =>
+    {
+        endpoints.MapControllers();
+    });
+}
+
     }
 }
